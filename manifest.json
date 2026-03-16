@@ -1,0 +1,18 @@
+{
+"name": "金物割付 - KYOWA ROOF",
+"short_name": "金物割付",
+"description": "屋根金物の割付計算ツール",
+"start_url": "./index.html",
+"display": "standalone",
+"orientation": "portrait",
+"background_color": "#000000",
+"theme_color": "#000000",
+"icons": [
+{
+"src": "https://www.google.com/search?q=https://cdn-icons-png.flaticon.com/512/595/595441.png",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any maskable"
+}
+]
+}
