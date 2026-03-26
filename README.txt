@@ -1,6 +1,4 @@
-# 金物割付 完全版
-
-構成は他の完全版と同じです。
+# 金物割付 キャッシュ事故ゼロ構成
 
 ## 配置するファイル
 - index.html
@@ -9,17 +7,18 @@
 - icon-180.png
 - icon-192.png
 - icon-512.png
+
+## この構成で削除したもの
 - icon-1024.png
 - splash-1170x2532.png
-- README.txt
+- 旧READMEの冗長な説明
 
-## 公開手順
+## 反映手順
 1. ZIPを解凍
-2. 中身をGitHubリポジトリ直下にアップロード
-3. Settings > Pages > Deploy from branch > main / root
-4. Android Chromeで公開URLを開く
-5. 「アプリをインストール」で全画面起動
+2. 中身をGitHubリポジトリ直下にそのまま上書き
+3. 反映しない端末は一度アプリを閉じて再起動
+4. それでも反映しない場合のみサイトデータ削除
 
 ## 注意
-- 旧service workerやmanifestが残っていると更新が反映されにくいです
-- 反映しない場合はサイトデータ削除後に再読み込みしてください
+- service worker のキャッシュ名は kanamono-v2
+- 今後さらに構成変更する場合は、sw.js も含めて更新すること
