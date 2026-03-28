@@ -37,7 +37,6 @@
             overflow-x: hidden;
         }
 
-        /* ヘッダー */
         .header-bar {
             width: 100%;
             display: flex;
@@ -48,7 +47,6 @@
             background: var(--ios-bg);
         }
 
-        /* スリムなタブ */
         .tab-wrapper {
             position: sticky;
             top: 0;
@@ -99,7 +97,6 @@
             flex-grow: 1;
         }
 
-        /* 計算結果パネル */
         .result-stack { padding: 10px 12px; }
         .result-box {
             height: 60px;
@@ -113,6 +110,7 @@
             margin-bottom: 8px;
         }
 
+        /* 働き計算(青)と本数計算(緑)の背景・枠線は元通り固定 */
         .result-box-blue { background: rgba(10, 132, 255, 0.15); border-color: var(--ios-blue); }
         .result-box-green { background: rgba(48, 209, 88, 0.15); border-color: var(--ios-green); }
 
@@ -128,7 +126,6 @@
         .result-label-left {
             font-size: 14px;
             font-weight: 700;
-            color: #ffffff;
             text-align: left;
             line-height: 1.2;
             text-transform: uppercase;
@@ -149,7 +146,17 @@
             margin: 0 6px;
         }
 
-        /* セルグリッド - テンキーと連結 */
+        /* 自動計算マーク(オレンジ) */
+        .manual-star {
+            color: var(--ios-orange);
+            font-size: 12px;
+            margin-left: 2px;
+            display: none;
+        }
+        .show-star .manual-star {
+            display: inline;
+        }
+
         .cell-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -187,7 +194,6 @@
         .input-value {
             font-size: 26px;
             font-weight: 700;
-            color: #ffffff;
             flex: 1;
             text-align: right;
         }
@@ -195,12 +201,31 @@
         .input-label-left {
             font-size: 13px;
             font-weight: 700;
-            color: var(--label-gray);
             margin-right: 4px;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
         }
 
-        /* テンキー - セルと連結 */
+        /* -------------------------------------------
+           ★ ここから文字色の自動連動設定 ★
+        ------------------------------------------- */
+        
+        /* 全幅は常にシルバー */
+        #cell-totalLength .input-label-left { color: var(--ios-silver-dark); }
+        #cell-totalLength .input-value { color: var(--ios-silver); }
+
+        /* デフォルトの文字色 (未入力時や基準となる色) */
+        .color-target-pitch { color: var(--ios-blue); transition: color 0.2s ease; }
+        .color-target-count { color: var(--ios-green); transition: color 0.2s ease; }
+
+        /* 働き(ブルー)から自動計算された時：本数のラベル・数値をブルーに変更 */
+        body.mode-pitch-driven .color-target-count { color: var(--ios-blue); }
+
+        /* 本数(グリーン)から自動計算された時：働きのラベル・数値をグリーンに変更 */
+        body.mode-count-driven .color-target-pitch { color: var(--ios-green); }
+
+
         .keypad-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -225,8 +250,15 @@
         .key-btn:active { background: #333; }
         .key-btn.orange { background: var(--ios-orange); font-weight: 700; }
         .key-btn.gray { background: #2c2c2e; color: var(--label-gray); font-size: 18px; font-weight: 600; }
+        .key-btn.auto-btn { font-size: 14px; line-height: 1.1; font-weight: bold; flex-direction: column; }
+        /* 自動ボタンのみオレンジ */
+        .key-btn.auto-active { color: var(--ios-orange); }
 
-        /* 割付表表示 */
+        #enter-btn-label {
+            font-size: 16px; 
+            letter-spacing: 0.5px;
+        }
+
         .table-area { padding: 10px 12px; }
         .table-card {
             background: var(--ios-card);
@@ -242,30 +274,16 @@
             text-align: center;
         }
 
+        .text-pitch { color: var(--ios-blue); }
+        .text-count { color: var(--ios-green); }
+
         .table-foot-row {
             background: #2c2c2e;
             border-top: 2px solid #444;
         }
 
-        #toast {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(59, 130, 246, 0.95);
-            color: white;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-weight: bold;
-            opacity: 0;
-            z-index: 1000;
-            transition: 0.3s;
-            pointer-events: none;
-        }
-        #toast.show { opacity: 1; }
         .hidden { display: none !important; }
     </style>
-
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
@@ -307,16 +325,12 @@ if ('serviceWorker' in navigator) {
 </head>
 <body>
 
-    <div id="toast">コピーしました</div>
-
     <div class="main-container">
-        <!-- ヘッダー -->
         <div class="header-bar">
             <span style="font-size: 14px; font-weight: bold;">金物割付</span>
             <span style="font-size: 12px; opacity: 0.8;">KYOWA ROOF</span>
         </div>
 
-        <!-- タブメニュー (スリム化) -->
         <div class="tab-wrapper">
             <div class="tab-container">
                 <button id="tab-calc" class="tab-button active" onclick="switchTab('calc')">計算入力</button>
@@ -324,20 +338,22 @@ if ('serviceWorker' in navigator) {
             </div>
         </div>
 
-        <!-- 計算入力画面 -->
         <div id="view-calc">
-            <!-- 結果パネル -->
             <div class="result-stack">
-                <div class="result-box result-box-blue">
-                    <div class="result-label-left text-[#0a84ff]">働き計算<br>本数 / 余り</div>
+                <div class="result-box result-box-blue" id="res-box-pitch">
+                    <div class="result-label-left color-target-pitch">
+                        働き計算<span class="manual-star">★</span><br>本数 / 余り
+                    </div>
                     <div class="result-value">
                         <span id="resQty">-</span><span class="unit-text">本</span>
                         <span class="separator-slash">/</span>
                         <span id="resQtyRem" class="text-2xl">-</span><span class="unit-text text-sm">㎜</span>
                     </div>
                 </div>
-                <div class="result-box result-box-green">
-                    <div class="result-label-left text-[#30d158]">本数計算<br>働き / 余り</div>
+                <div class="result-box result-box-green" id="res-box-count">
+                    <div class="result-label-left color-target-count">
+                        本数計算<span class="manual-star">★</span><br>働き / 余り
+                    </div>
                     <div class="result-value">
                         <span id="resWidth">-</span><span class="unit-text text-sm">㎜</span>
                         <span class="separator-slash">/</span>
@@ -346,46 +362,45 @@ if ('serviceWorker' in navigator) {
                 </div>
             </div>
 
-            <!-- 入力パネル (連結デザイン) -->
             <div class="cell-grid">
-                <div class="calc-cell calc-cell-sm" onclick="focusInput('pitch')">
-                    <span class="input-label-left text-[#0a84ff]">働き(@)</span>
-                    <div id="display-pitch" class="input-value text-[#0a84ff]">0</div>
+                <div class="calc-cell calc-cell-sm" id="cell-pitch" onclick="focusInput('pitch')">
+                    <span class="input-label-left color-target-pitch">働き(@)<span class="manual-star">★</span></span>
+                    <div id="display-pitch" class="input-value color-target-pitch">0</div>
                 </div>
-                <div class="calc-cell calc-cell-sm" onclick="focusInput('count')">
-                    <span class="input-label-left text-[#30d158]">本数(N)</span>
-                    <div id="display-count" class="input-value text-[#30d158]">0</div>
+                <div class="calc-cell calc-cell-sm" id="cell-count" onclick="focusInput('count')">
+                    <span class="input-label-left color-target-count">本数(N)<span class="manual-star">★</span></span>
+                    <div id="display-count" class="input-value color-target-count">0</div>
                 </div>
-                <div class="calc-cell span-6 focused" onclick="focusInput('totalLength')">
+                <div class="calc-cell span-6 focused" id="cell-totalLength" onclick="focusInput('totalLength')">
                     <span class="input-label-left">全幅 (W)</span>
                     <div id="display-totalLength" class="input-value">0</div>
                 </div>
             </div>
 
-            <!-- テンキー -->
             <div class="keypad-container">
                 <button class="key-btn" onclick="pressKey('7')">7</button>
                 <button class="key-btn" onclick="pressKey('8')">8</button>
                 <button class="key-btn" onclick="pressKey('9')">9</button>
-                <button class="key-btn gray" onclick="pressKey('backspace')">⇦</button>
+                <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
                 
                 <button class="key-btn" onclick="pressKey('4')">4</button>
                 <button class="key-btn" onclick="pressKey('5')">5</button>
                 <button class="key-btn" onclick="pressKey('6')">6</button>
-                <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
+                <button class="key-btn gray" onclick="pressKey('clear')">C</button>
                 
                 <button class="key-btn" onclick="pressKey('1')">1</button>
                 <button class="key-btn" onclick="pressKey('2')">2</button>
                 <button class="key-btn" onclick="pressKey('3')">3</button>
-                <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">⏎</button>
+                <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">割付表</button>
                 
-                <button class="key-btn" onclick="pressKey('0')">0</button>
-                <button class="key-btn" onclick="pressKey('00')">00</button>
-                <button class="key-btn" onclick="pressKey('000')">000</button>
+                <button class="key-btn" onclick="buttonHaptic(); pressKey('0')">0</button>
+                <button class="key-btn" onclick="buttonHaptic(); pressKey('00')">00</button>
+                <button class="key-btn gray auto-btn auto-active" id="auto-toggle-btn" onclick="pressKey('autoToggle')">
+                    <span>自 動</span><span id="auto-status-label" style="font-size: 10px;">ON</span>
+                </button>
             </div>
         </div>
 
-        <!-- 割付表画面 -->
         <div id="view-table" class="hidden">
             <div class="table-area">
                 <div class="table-card">
@@ -396,18 +411,22 @@ if ('serviceWorker' in navigator) {
                     <table class="w-full">
                         <thead class="shadow-md">
                             <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-bold border-b border-[#444]">
-                                <th class="py-3 border-r border-[#444] w-1/2 text-[#0a84ff] tracking-wider">働き計算 (@<span id="th-W">-</span>)</th>
-                                <th class="py-3 w-1/2 text-[#30d158] tracking-wider">本数計算 (N<span id="th-N">-</span>)</th>
+                                <th class="py-3 border-r border-[#444] w-1/2 tracking-wider text-pitch" id="th-pitch-head">
+                                    働き計算 (@<span id="th-W">-</span>)<span class="manual-star">★</span>
+                                </th>
+                                <th class="py-3 w-1/2 tracking-wider text-count" id="th-count-head">
+                                    本数計算 (N<span id="th-N">-</span>)<span class="manual-star">★</span>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="detailTableBody"></tbody>
                         <tfoot class="table-foot-row shadow-inner">
                             <tr class="font-bold border-t border-[#444]">
-                                <td class="py-3 border-r border-[#444] text-center text-[#0a84ff]">
+                                <td class="py-3 border-r border-[#444] text-center text-pitch" id="foot-pitch-cell">
                                     <span class="text-[14px] block opacity-70 font-bold mb-0.5">働き計算 本数</span>
                                     <span class="text-[18px]"><span id="foot-resQty">-</span>本</span>
                                 </td>
-                                <td class="py-3 text-center text-[#30d158]">
+                                <td class="py-3 text-center text-count" id="foot-count-cell">
                                     <span class="text-[14px] block opacity-70 font-bold mb-0.5">本数計算 働き幅</span>
                                     <span class="text-[18px]"><span id="foot-resWidth">-</span>㎜</span>
                                 </td>
@@ -422,13 +441,19 @@ if ('serviceWorker' in navigator) {
 <script>
     let currentActiveTab = 'calc';
     let focusedInputId = 'totalLength';
-    let isOverwriteMode = true; 
-    const storageKey = 'kanamono_v12_final';
+    let isOverwriteMode = true;
+    let isAutoMode = true; 
+    const storageKey = 'kanamono_v19_text_color_sync';
 
     const inputs = {
         totalLength: '',
         pitch: '',
         count: ''
+    };
+
+    const manualFlags = {
+        pitch: true, 
+        count: false
     };
 
     function switchTab(tabName) {
@@ -453,13 +478,28 @@ if ('serviceWorker' in navigator) {
     }
 
     function pressKey(key) {
-        if (key === 'backspace') {
-            inputs[focusedInputId] = inputs[focusedInputId].toString().slice(0, -1);
-            isOverwriteMode = false;
-        } else if (key === 'clearAll') {
+        if (key === 'autoToggle') {
+            isAutoMode = !isAutoMode;
+            updateAutoButtonUI();
+            if (isAutoMode) {
+                // 自動に戻る際は現在の状況から再計算
+                if (manualFlags.count) autoUpdatePitch();
+                else autoUpdateCount();
+                updateDisplay();
+                calculate();
+            }
+            return;
+        }
+
+        if (key === 'clearAll') {
             inputs.totalLength = '';
             inputs.pitch = '';
             inputs.count = '';
+            manualFlags.pitch = true;
+            manualFlags.count = false;
+            isOverwriteMode = true;
+        } else if (key === 'clear') {
+            inputs[focusedInputId] = '';
             isOverwriteMode = true;
         } else if (key === 'enter') {
             handleEnter();
@@ -473,8 +513,60 @@ if ('serviceWorker' in navigator) {
                 else inputs[focusedInputId] += key;
             }
         }
+        
+        if (isAutoMode) {
+            if (focusedInputId === 'pitch') {
+                manualFlags.pitch = true;
+                manualFlags.count = false;
+                autoUpdateCount();
+            } else if (focusedInputId === 'count') {
+                manualFlags.count = true;
+                manualFlags.pitch = false;
+                autoUpdatePitch();
+            } else if (focusedInputId === 'totalLength') {
+                if (manualFlags.count) autoUpdatePitch();
+                else autoUpdateCount();
+            }
+        } else {
+            // オフの場合は両方を手動として扱う
+            if (focusedInputId === 'pitch') manualFlags.pitch = true;
+            if (focusedInputId === 'count') manualFlags.count = true;
+        }
+
         updateDisplay();
         calculate();
+    }
+
+    function updateAutoButtonUI() {
+        const btn = document.getElementById('auto-toggle-btn');
+        const label = document.getElementById('auto-status-label');
+        if (isAutoMode) {
+            btn.classList.add('auto-active');
+            label.innerText = 'ON';
+            label.style.color = 'var(--ios-orange)';
+        } else {
+            btn.classList.remove('auto-active');
+            label.innerText = 'OFF';
+            label.style.color = 'inherit';
+        }
+    }
+
+    function autoUpdateCount() {
+        const L = parseFloat(inputs.totalLength);
+        const W = parseFloat(inputs.pitch);
+        if (!isNaN(L) && !isNaN(W) && W > 0) {
+            const qty = Math.floor(L / W) + 1;
+            inputs.count = qty.toString();
+        }
+    }
+
+    function autoUpdatePitch() {
+        const L = parseFloat(inputs.totalLength);
+        const N = parseFloat(inputs.count);
+        if (!isNaN(L) && !isNaN(N) && N > 1) {
+            const pitchVal = Math.floor(L / (N - 1));
+            inputs.pitch = pitchVal.toString();
+        }
     }
 
     function handleEnter() {
@@ -484,6 +576,27 @@ if ('serviceWorker' in navigator) {
     }
 
     function updateDisplay() {
+        // 色変更のモード判定（未入力・未計算の時は default になる）
+        let mode = 'default';
+        if (isAutoMode) {
+            const hasTotal = inputs.totalLength !== '' && inputs.totalLength !== '0';
+            const hasPitch = inputs.pitch !== '' && inputs.pitch !== '0';
+            const hasCount = inputs.count !== '' && inputs.count !== '0';
+
+            // 働きが手動で、本数が自動計算されて値が入っている場合 -> 本数の文字色をブルーに染める
+            if (manualFlags.pitch && !manualFlags.count && hasTotal && hasPitch) {
+                mode = 'pitch-driven';
+            } 
+            // 本数が手動で、働きが自動計算されて値が入っている場合 -> 働きの文字色をグリーンに染める
+            else if (!manualFlags.pitch && manualFlags.count && hasTotal && hasCount) {
+                mode = 'count-driven';
+            }
+        }
+        
+        document.body.classList.remove('mode-pitch-driven', 'mode-count-driven');
+        if (mode === 'pitch-driven') document.body.classList.add('mode-pitch-driven');
+        if (mode === 'count-driven') document.body.classList.add('mode-count-driven');
+
         for (const key in inputs) {
             const el = document.getElementById(`display-${key}`);
             if (el) {
@@ -496,6 +609,15 @@ if ('serviceWorker' in navigator) {
                 }
             }
         }
+
+        const showPitchStar = (mode === 'pitch-driven');
+        const showCountStar = (mode === 'count-driven');
+
+        document.getElementById('cell-pitch').classList.toggle('show-star', showPitchStar);
+        document.getElementById('cell-count').classList.toggle('show-star', showCountStar);
+        document.getElementById('res-box-pitch').classList.toggle('show-star', showPitchStar);
+        document.getElementById('res-box-count').classList.toggle('show-star', showCountStar);
+
         saveToStorage();
     }
 
@@ -503,16 +625,13 @@ if ('serviceWorker' in navigator) {
         const L = parseFloat(inputs.totalLength);
         const W = parseFloat(inputs.pitch);
         const N = parseFloat(inputs.count);
-
         const resQty = document.getElementById('resQty');
         const resQtyRem = document.getElementById('resQtyRem');
         const resWidth = document.getElementById('resWidth');
         const resWidthRem = document.getElementById('resWidthRem');
 
-        resQty.innerText = "-";
-        resQtyRem.innerText = "-";
-        resWidth.innerText = "-";
-        resWidthRem.innerText = "-";
+        resQty.innerText = "-"; resQtyRem.innerText = "-";
+        resWidth.innerText = "-"; resWidthRem.innerText = "-";
 
         if (isNaN(L)) return;
 
@@ -541,13 +660,59 @@ if ('serviceWorker' in navigator) {
         document.getElementById('table-badge-L').innerText = isNaN(L) ? '-' : L.toLocaleString();
         document.getElementById('th-W').innerText = isNaN(W) ? '-' : W.toLocaleString();
         document.getElementById('th-N').innerText = isNaN(N) ? '-' : N.toLocaleString();
+        
+        const hasTotal = inputs.totalLength !== '' && inputs.totalLength !== '0';
+        const hasPitch = inputs.pitch !== '' && inputs.pitch !== '0';
+        const hasCount = inputs.count !== '' && inputs.count !== '0';
+        
+        let mode = 'default';
+        if (isAutoMode) {
+            if (manualFlags.pitch && !manualFlags.count && hasTotal && hasPitch) mode = 'pitch-driven';
+            else if (!manualFlags.pitch && manualFlags.count && hasTotal && hasCount) mode = 'count-driven';
+        }
+
+        const showPitchStar = (mode === 'pitch-driven');
+        const showCountStar = (mode === 'count-driven');
+
+        document.getElementById('th-pitch-head').classList.toggle('show-star', showPitchStar);
+        document.getElementById('th-count-head').classList.toggle('show-star', showCountStar);
 
         const footQty = document.getElementById('foot-resQty');
         const footWidth = document.getElementById('foot-resWidth');
-        footQty.innerText = "-";
-        footWidth.innerText = "-";
+        footQty.innerText = "-"; footWidth.innerText = "-";
 
         if (isNaN(L)) return;
+
+        // --- 表示列の判定（自動モードONなら手動入力側のみ表示） ---
+        const showPitch = manualFlags.pitch || !isAutoMode;
+        const showCount = manualFlags.count || !isAutoMode;
+
+        // ヘッダーとフッターの表示切替
+        const thPitch = document.getElementById('th-pitch-head');
+        const thCount = document.getElementById('th-count-head');
+        const footPitch = document.getElementById('foot-pitch-cell');
+        const footCount = document.getElementById('foot-count-cell');
+
+        thPitch.classList.toggle('hidden', !showPitch);
+        thCount.classList.toggle('hidden', !showCount);
+        footPitch.classList.toggle('hidden', !showPitch);
+        footCount.classList.toggle('hidden', !showCount);
+
+        // 列数に応じた幅とボーダーの調整
+        if (showPitch && !showCount) {
+            thPitch.classList.remove('w-1/2', 'border-r', 'border-[#444]');
+            thPitch.classList.add('w-full');
+            footPitch.classList.remove('border-r', 'border-[#444]');
+        } else if (!showPitch && showCount) {
+            thCount.classList.remove('w-1/2');
+            thCount.classList.add('w-full');
+        } else {
+            thPitch.classList.remove('w-full');
+            thPitch.classList.add('w-1/2', 'border-r', 'border-[#444]');
+            thCount.classList.remove('w-full');
+            thCount.classList.add('w-1/2');
+            footPitch.classList.add('border-r', 'border-[#444]');
+        }
 
         const listQty = [];
         const listWidth = [];
@@ -577,23 +742,37 @@ if ('serviceWorker' in navigator) {
         const maxRows = Math.max(listQty.length, listWidth.length);
         for (let i = 0; i < maxRows; i++) {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="table-cell border-r border-[#333] text-[#0a84ff]">${listQty[i] !== undefined ? listQty[i].toLocaleString() : '-'}</td>
-                <td class="table-cell text-[#30d158]">${listWidth[i] !== undefined ? listWidth[i].toLocaleString() : '-'}</td>
-            `;
+            let tdPitch = '';
+            let tdCount = '';
+
+            if (showPitch) {
+                const val = listQty[i] !== undefined ? listQty[i].toLocaleString() : '-';
+                const borderClass = showCount ? 'border-r border-[#333]' : '';
+                tdPitch = `<td class="table-cell ${borderClass} text-pitch">${val}</td>`;
+            }
+            if (showCount) {
+                const val = listWidth[i] !== undefined ? listWidth[i].toLocaleString() : '-';
+                tdCount = `<td class="table-cell text-count">${val}</td>`;
+            }
+
+            tr.innerHTML = tdPitch + tdCount;
             tbody.appendChild(tr);
         }
     }
 
     function saveToStorage() {
-        localStorage.setItem(storageKey, JSON.stringify(inputs));
+        const dataToSave = { inputs, manualFlags, isAutoMode };
+        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
     }
 
     function loadFromStorage() {
         const saved = localStorage.getItem(storageKey);
         if (saved) {
             const data = JSON.parse(saved);
-            Object.assign(inputs, data);
+            Object.assign(inputs, data.inputs);
+            Object.assign(manualFlags, data.manualFlags);
+            isAutoMode = data.isAutoMode ?? true;
+            updateAutoButtonUI();
             updateDisplay();
             calculate();
         }
@@ -623,7 +802,15 @@ if ('serviceWorker' in navigator) {
         loadFromStorage();
         focusInput('totalLength');
     };
+
+    function buttonHaptic() {
+        if ('vibrate' in navigator) {
+            navigator.vibrate(5);
+        }
+    }
 </script>
+
+
 
 <button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
 <script>
