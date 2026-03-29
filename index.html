@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>金物割付 - KYOWA ROOF</title>
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
     <style>
         :root {
@@ -770,6 +772,17 @@
             navigator.vibrate(5);
         }
     }
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((error) => {
+            console.error('Service Worker registration failed:', error);
+        });
+    });
+}
 </script>
 
 </body>
