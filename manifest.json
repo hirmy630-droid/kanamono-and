@@ -1,6 +1,6 @@
 {
-  "name": "金物割付",
-  "short_name": "金物",
+  "name": "役物材料 計算",
+  "short_name": "役物",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
