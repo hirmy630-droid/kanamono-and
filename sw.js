@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kanamono-v2';
+const CACHE_NAME = 'kanamono-v3-numbered';
 const APP_SHELL = [
   './',
   './index.html',

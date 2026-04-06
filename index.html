@@ -373,6 +373,7 @@
                     <table class="w-full">
                         <thead class="shadow-md">
                             <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-bold border-b border-[#444]">
+                                <th class="py-3 border-r border-[#444] w-[56px] tracking-wider">No.</th>
                                 <th class="py-3 border-r border-[#444] w-1/2 tracking-wider text-pitch" id="th-pitch-head">
                                     働き計算 (@<span id="th-W">-</span>)<span class="manual-star">★</span>
                                 </th>
@@ -384,6 +385,7 @@
                         <tbody id="detailTableBody"></tbody>
                         <tfoot class="table-foot-row shadow-inner">
                             <tr class="font-bold border-t border-[#444]">
+                                <td class="py-3 border-r border-[#444] text-center text-zinc-300">合計</td>
                                 <td class="py-3 border-r border-[#444] text-center text-pitch" id="foot-pitch-cell">
                                     <span class="text-[14px] block opacity-70 font-bold mb-0.5">働き計算 本数</span>
                                     <span class="text-[18px]"><span id="foot-resQty">-</span>本</span>
@@ -704,6 +706,7 @@
         const maxRows = Math.max(listQty.length, listWidth.length);
         for (let i = 0; i < maxRows; i++) {
             const tr = document.createElement('tr');
+            let tdNo = `<td class="table-cell border-r border-[#333] text-zinc-300">${i + 1}</td>`;
             let tdPitch = '';
             let tdCount = '';
 
@@ -717,7 +720,7 @@
                 tdCount = `<td class="table-cell text-count">${val}</td>`;
             }
 
-            tr.innerHTML = tdPitch + tdCount;
+            tr.innerHTML = tdNo + tdPitch + tdCount;
             tbody.appendChild(tr);
         }
     }
