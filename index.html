@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>金物割付 - KYOWA ROOF</title>
+
+    <!-- PWA設定 -->
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-180.png">
+    <link rel="icon" href="./icon-192.png" type="image/png">
+    <meta name="theme-color" content="#000000">
+
     <script src="https://cdn.tailwindcss.com/3.4.1"></script>
     <style>
         :root {
@@ -180,6 +187,8 @@
             position: relative;
             grid-column: span 3;
             border: 0.5px solid var(--unfocused-border);
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
         }
 
         .calc-cell-sm { height: 50px; }
@@ -226,6 +235,7 @@
             border-radius: 0 0 16px 16px;
             overflow: hidden;
             border: 1px solid var(--ios-border);
+            -webkit-touch-callout: none;
         }
 
         .key-btn {
@@ -259,7 +269,6 @@
             overflow: hidden;
             border: 1px solid var(--ios-border);
         }
-        /* フォントサイズ20pxは維持し、上下パディングと行送りをコンパクトに調整 */
         .table-cell {
             padding: 6px 4px;
             line-height: 1.25;
@@ -339,17 +348,17 @@
                 <button class="key-btn" onclick="pressKey('8')">8</button>
                 <button class="key-btn" onclick="pressKey('9')">9</button>
                 <button class="key-btn gray" onclick="pressKey('clear')">C</button>
-                
+
                 <button class="key-btn" onclick="pressKey('4')">4</button>
                 <button class="key-btn" onclick="pressKey('5')">5</button>
                 <button class="key-btn" onclick="pressKey('6')">6</button>
                 <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
-                
+
                 <button class="key-btn" onclick="pressKey('1')">1</button>
                 <button class="key-btn" onclick="pressKey('2')">2</button>
                 <button class="key-btn" onclick="pressKey('3')">3</button>
                 <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">割付表</button>
-                
+
                 <button class="key-btn" onclick="pressKey('0')">0</button>
                 <button class="key-btn" onclick="pressKey('00')">00</button>
                 <button class="key-btn gray auto-btn auto-active" id="auto-toggle-btn" onclick="pressKey('autoToggle')">
@@ -421,7 +430,7 @@
         document.getElementById('view-table').classList.toggle('hidden', tabName !== 'table');
         document.getElementById('tab-calc').classList.toggle('active', tabName === 'calc');
         document.getElementById('tab-table').classList.toggle('active', tabName === 'table');
-        
+
         if (tabName === 'table') generateTable();
         window.scrollTo(0, 0);
     }
@@ -460,6 +469,7 @@
             isOverwriteMode = true;
             updateDisplay();
             calculate();
+            focusInput('totalLength'); // 全幅にフォーカスを戻す
             return;
         } else if (key === 'clear') {
             inputs[focusedInputId] = '';
@@ -469,14 +479,17 @@
             return;
         } else {
             if (isOverwriteMode) {
-                inputs[focusedInputId] = key;
+                inputs[focusedInputId] = (key === '00') ? '0' : key; // 00入力バグ防止
                 isOverwriteMode = false;
             } else {
-                if (inputs[focusedInputId] === '0') inputs[focusedInputId] = key;
-                else inputs[focusedInputId] += key;
+                if (inputs[focusedInputId] === '0') {
+                    inputs[focusedInputId] = (key === '00') ? '0' : key;
+                } else {
+                    inputs[focusedInputId] += key;
+                }
             }
         }
-        
+
         if (isAutoMode) {
             if (focusedInputId === 'pitch') {
                 manualFlags.pitch = true;
@@ -550,7 +563,7 @@
                 mode = 'count-driven';
             }
         }
-        
+
         document.body.classList.remove('mode-pitch-driven', 'mode-count-driven');
         if (mode === 'pitch-driven') document.body.classList.add('mode-pitch-driven');
         if (mode === 'count-driven') document.body.classList.add('mode-count-driven');
@@ -618,11 +631,11 @@
         document.getElementById('table-badge-L').innerText = isNaN(L) ? '-' : L.toLocaleString();
         document.getElementById('th-W').innerText = isNaN(W) ? '-' : W.toLocaleString();
         document.getElementById('th-N').innerText = isNaN(N) ? '-' : N.toLocaleString();
-        
+
         const hasTotal = inputs.totalLength !== '' && inputs.totalLength !== '0';
         const hasPitch = inputs.pitch !== '' && inputs.pitch !== '0';
         const hasCount = inputs.count !== '' && inputs.count !== '0';
-        
+
         let mode = 'default';
         if (isAutoMode) {
             if (manualFlags.pitch && !manualFlags.count && hasTotal && hasPitch) mode = 'pitch-driven';
@@ -720,9 +733,7 @@
         try {
             const dataToSave = { inputs, manualFlags, isAutoMode };
             localStorage.setItem(storageKey, JSON.stringify(dataToSave));
-        } catch (e) {
-            // Safariプライベートブラウズやストレージ容量制限時の例外をキャッチしてクラッシュを抑止
-        }
+        } catch (e) {}
     }
 
     function loadFromStorage() {
@@ -739,9 +750,7 @@
                     calculate();
                 }
             }
-        } catch (e) {
-            // JSON破損やアクセス拒否時のフォールバック
-        }
+        } catch (e) {}
     }
 
     let touchStartX = 0;
@@ -749,7 +758,6 @@
     let isTouchOnInteractive = false;
 
     document.addEventListener('touchstart', e => {
-        // キーパッドやボタン上でのタッチ操作時はスワイプ判定の対象外にする
         isTouchOnInteractive = !!e.target.closest('button, .calc-cell, .keypad-container, input, select, textarea');
         touchStartX = e.changedTouches[0].clientX;
         touchStartY = e.changedTouches[0].clientY;
@@ -762,7 +770,8 @@
         const touchEndY = e.changedTouches[0].clientY;
         const deltaX = touchStartX - touchEndX;
         const deltaY = Math.abs(touchStartY - touchEndY);
-        if (Math.abs(deltaX) > 80 && deltaY < 100) {
+        // 縦スクロール時のスワイプ誤爆を防止するためにしきい値を50pxに引き締め
+        if (Math.abs(deltaX) > 80 && deltaY < 50) {
             if (deltaX > 0 && currentActiveTab === 'calc') switchTab('table');
             else if (deltaX < 0 && currentActiveTab === 'table') switchTab('calc');
         }
@@ -775,10 +784,17 @@
 
     function buttonHaptic() {
         if ('vibrate' in navigator) {
-            try {
-                navigator.vibrate(5);
-            } catch (e) {}
+            try { navigator.vibrate(5); } catch (e) {}
         }
+    }
+
+    // Service Worker の登録
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => {
+                console.log('SW registration failed: ', err);
+            });
+        });
     }
 </script>
 
