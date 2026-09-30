@@ -81,6 +81,9 @@
             cursor: pointer;
             transition: 0.2s;
             border: 1.5px solid transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         .tab-button.active {
@@ -110,7 +113,6 @@
             margin-bottom: 8px;
         }
 
-        /* 働き計算(青)と本数計算(緑)の背景・枠線は元通り固定 */
         .result-box-blue { background: rgba(10, 132, 255, 0.15); border-color: var(--ios-blue); }
         .result-box-green { background: rgba(48, 209, 88, 0.15); border-color: var(--ios-green); }
 
@@ -146,7 +148,6 @@
             margin: 0 6px;
         }
 
-        /* 自動計算マーク(オレンジ) */
         .manual-star {
             color: var(--ios-orange);
             font-size: 12px;
@@ -207,24 +208,14 @@
             align-items: center;
         }
 
-        /* -------------------------------------------
-           ★ ここから文字色の自動連動設定 ★
-        ------------------------------------------- */
-        
-        /* 全幅は常にシルバー */
         #cell-totalLength .input-label-left { color: var(--ios-silver-dark); }
         #cell-totalLength .input-value { color: var(--ios-silver); }
 
-        /* デフォルトの文字色 (未入力時や基準となる色) */
         .color-target-pitch { color: var(--ios-blue); transition: color 0.2s ease; }
         .color-target-count { color: var(--ios-green); transition: color 0.2s ease; }
 
-        /* 働き(ブルー)から自動計算された時：本数のラベル・数値をブルーに変更 */
         body.mode-pitch-driven .color-target-count { color: var(--ios-blue); }
-
-        /* 本数(グリーン)から自動計算された時：働きのラベル・数値をグリーンに変更 */
         body.mode-count-driven .color-target-pitch { color: var(--ios-green); }
-
 
         .keypad-container {
             display: grid;
@@ -246,12 +237,14 @@
             align-items: center;
             justify-content: center;
             transition: background 0.1s;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
         }
         .key-btn:active { background: #333; }
         .key-btn.orange { background: var(--ios-orange); font-weight: 700; }
         .key-btn.gray { background: #2c2c2e; color: var(--label-gray); font-size: 18px; font-weight: 600; }
         .key-btn.auto-btn { font-size: 14px; line-height: 1.1; font-weight: bold; flex-direction: column; }
-        /* 自動ボタンのみオレンジ */
         .key-btn.auto-active { color: var(--ios-orange); }
 
         #enter-btn-label {
@@ -266,8 +259,10 @@
             overflow: hidden;
             border: 1px solid var(--ios-border);
         }
+        /* フォントサイズ20pxは維持し、上下パディングと行送りをコンパクトに調整 */
         .table-cell {
-            padding: 12px 4px;
+            padding: 6px 4px;
+            line-height: 1.25;
             border-bottom: 1px solid var(--ios-border);
             font-size: 20px;
             font-weight: 700;
@@ -355,8 +350,8 @@
                 <button class="key-btn" onclick="pressKey('3')">3</button>
                 <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">割付表</button>
                 
-                <button class="key-btn" onclick="buttonHaptic(); pressKey('0')">0</button>
-                <button class="key-btn" onclick="buttonHaptic(); pressKey('00')">00</button>
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn" onclick="pressKey('00')">00</button>
                 <button class="key-btn gray auto-btn auto-active" id="auto-toggle-btn" onclick="pressKey('autoToggle')">
                     <span>自 動</span><span id="auto-status-label" style="font-size: 10px;">ON</span>
                 </button>
@@ -366,18 +361,18 @@
         <div id="view-table" class="hidden">
             <div class="table-area">
                 <div class="table-card">
-                    <div class="bg-[#2c2c2e] p-3 flex justify-between items-center border-b border-[#444]">
+                    <div class="bg-[#2c2c2e] p-2.5 flex justify-between items-center border-b border-[#444]">
                         <span class="font-bold text-base">全幅: <span id="table-badge-L">-</span>㎜</span>
                         <span class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">墨出し寸法</span>
                     </div>
                     <table class="w-full">
                         <thead class="shadow-md">
-                            <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-bold border-b border-[#444]">
-                                <th class="py-3 border-r border-[#444] w-[56px] tracking-wider">No.</th>
-                                <th class="py-3 border-r border-[#444] w-1/2 tracking-wider text-pitch" id="th-pitch-head">
+                            <tr class="bg-[#2c2c2e] text-[13px] text-zinc-400 font-bold border-b border-[#444]">
+                                <th class="py-2 border-r border-[#444] w-[56px] tracking-wider">No.</th>
+                                <th class="py-2 border-r border-[#444] w-1/2 tracking-wider text-pitch" id="th-pitch-head">
                                     働き計算 (@<span id="th-W">-</span>)<span class="manual-star">★</span>
                                 </th>
-                                <th class="py-3 w-1/2 tracking-wider text-count" id="th-count-head">
+                                <th class="py-2 w-1/2 tracking-wider text-count" id="th-count-head">
                                     本数計算 (N<span id="th-N">-</span>)<span class="manual-star">★</span>
                                 </th>
                             </tr>
@@ -385,14 +380,14 @@
                         <tbody id="detailTableBody"></tbody>
                         <tfoot class="table-foot-row shadow-inner">
                             <tr class="font-bold border-t border-[#444]">
-                                <td class="py-3 border-r border-[#444] text-center text-zinc-300">合計</td>
-                                <td class="py-3 border-r border-[#444] text-center text-pitch" id="foot-pitch-cell">
-                                    <span class="text-[14px] block opacity-70 font-bold mb-0.5">働き計算 本数</span>
-                                    <span class="text-[18px]"><span id="foot-resQty">-</span>本</span>
+                                <td class="py-2 border-r border-[#444] text-center text-zinc-300">合計</td>
+                                <td class="py-2 border-r border-[#444] text-center text-pitch" id="foot-pitch-cell">
+                                    <span class="text-[13px] block opacity-70 font-bold mb-0.5">働き計算 本数</span>
+                                    <span class="text-[17px]"><span id="foot-resQty">-</span>本</span>
                                 </td>
-                                <td class="py-3 text-center text-count" id="foot-count-cell">
-                                    <span class="text-[14px] block opacity-70 font-bold mb-0.5">本数計算 働き幅</span>
-                                    <span class="text-[18px]"><span id="foot-resWidth">-</span>㎜</span>
+                                <td class="py-2 text-center text-count" id="foot-count-cell">
+                                    <span class="text-[13px] block opacity-70 font-bold mb-0.5">本数計算 働き幅</span>
+                                    <span class="text-[17px]"><span id="foot-resWidth">-</span>㎜</span>
                                 </td>
                             </tr>
                         </tfoot>
@@ -442,11 +437,12 @@
     }
 
     function pressKey(key) {
+        buttonHaptic();
+
         if (key === 'autoToggle') {
             isAutoMode = !isAutoMode;
             updateAutoButtonUI();
             if (isAutoMode) {
-                // 自動に戻る際は現在の状況から再計算
                 if (manualFlags.count) autoUpdatePitch();
                 else autoUpdateCount();
                 updateDisplay();
@@ -462,6 +458,9 @@
             manualFlags.pitch = true;
             manualFlags.count = false;
             isOverwriteMode = true;
+            updateDisplay();
+            calculate();
+            return;
         } else if (key === 'clear') {
             inputs[focusedInputId] = '';
             isOverwriteMode = true;
@@ -492,7 +491,6 @@
                 else autoUpdateCount();
             }
         } else {
-            // オフの場合は両方を手動として扱う
             if (focusedInputId === 'pitch') manualFlags.pitch = true;
             if (focusedInputId === 'count') manualFlags.count = true;
         }
@@ -540,19 +538,15 @@
     }
 
     function updateDisplay() {
-        // 色変更のモード判定（未入力・未計算の時は default になる）
         let mode = 'default';
         if (isAutoMode) {
             const hasTotal = inputs.totalLength !== '' && inputs.totalLength !== '0';
             const hasPitch = inputs.pitch !== '' && inputs.pitch !== '0';
             const hasCount = inputs.count !== '' && inputs.count !== '0';
 
-            // 働きが手動で、本数が自動計算されて値が入っている場合 -> 本数の文字色をブルーに染める
             if (manualFlags.pitch && !manualFlags.count && hasTotal && hasPitch) {
                 mode = 'pitch-driven';
-            } 
-            // 本数が手動で、働きが自動計算されて値が入っている場合 -> 働きの文字色をグリーンに染める
-            else if (!manualFlags.pitch && manualFlags.count && hasTotal && hasCount) {
+            } else if (!manualFlags.pitch && manualFlags.count && hasTotal && hasCount) {
                 mode = 'count-driven';
             }
         }
@@ -647,11 +641,9 @@
 
         if (isNaN(L)) return;
 
-        // --- 表示列の判定（自動モードONなら手動入力側のみ表示） ---
         const showPitch = manualFlags.pitch || !isAutoMode;
         const showCount = manualFlags.count || !isAutoMode;
 
-        // ヘッダーとフッターの表示切替
         const thPitch = document.getElementById('th-pitch-head');
         const thCount = document.getElementById('th-count-head');
         const footPitch = document.getElementById('foot-pitch-cell');
@@ -662,7 +654,6 @@
         footPitch.classList.toggle('hidden', !showPitch);
         footCount.classList.toggle('hidden', !showCount);
 
-        // 列数に応じた幅とボーダーの調整
         if (showPitch && !showCount) {
             thPitch.classList.remove('w-1/2', 'border-r', 'border-[#444]');
             thPitch.classList.add('w-full');
@@ -726,32 +717,46 @@
     }
 
     function saveToStorage() {
-        const dataToSave = { inputs, manualFlags, isAutoMode };
-        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        try {
+            const dataToSave = { inputs, manualFlags, isAutoMode };
+            localStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        } catch (e) {
+            // Safariプライベートブラウズやストレージ容量制限時の例外をキャッチしてクラッシュを抑止
+        }
     }
 
     function loadFromStorage() {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.assign(inputs, data.inputs);
-            Object.assign(manualFlags, data.manualFlags);
-            isAutoMode = data.isAutoMode ?? true;
-            updateAutoButtonUI();
-            updateDisplay();
-            calculate();
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data && data.inputs && data.manualFlags) {
+                    Object.assign(inputs, data.inputs);
+                    Object.assign(manualFlags, data.manualFlags);
+                    isAutoMode = data.isAutoMode ?? true;
+                    updateAutoButtonUI();
+                    updateDisplay();
+                    calculate();
+                }
+            }
+        } catch (e) {
+            // JSON破損やアクセス拒否時のフォールバック
         }
     }
 
     let touchStartX = 0;
     let touchStartY = 0;
+    let isTouchOnInteractive = false;
 
     document.addEventListener('touchstart', e => {
+        // キーパッドやボタン上でのタッチ操作時はスワイプ判定の対象外にする
+        isTouchOnInteractive = !!e.target.closest('button, .calc-cell, .keypad-container, input, select, textarea');
         touchStartX = e.changedTouches[0].clientX;
         touchStartY = e.changedTouches[0].clientY;
     }, { passive: true });
 
     document.addEventListener('touchend', e => {
+        if (isTouchOnInteractive) return;
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -770,7 +775,9 @@
 
     function buttonHaptic() {
         if ('vibrate' in navigator) {
-            navigator.vibrate(5);
+            try {
+                navigator.vibrate(5);
+            } catch (e) {}
         }
     }
 </script>
